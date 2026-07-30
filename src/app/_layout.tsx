@@ -1,15 +1,33 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { Stack } from "expo-router";
+import React, { useEffect } from "react";
+import AppLockModal from "../components/AppLockModal";
+import { loadFromStorage } from "../data/items";
+import { loadProfileFromStorage } from "../data/profile";
+import { checkRemoteCloudLicense, loadLicenseFromStorage } from "../services/licenseService";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+export default function RootLayout() {
+  useEffect(() => {
+    // Safely initialize local storage after React Native bridge mounts
+    loadFromStorage();
+    loadProfileFromStorage();
+    loadLicenseFromStorage();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+    // Check remote cloud status every 8 seconds for live real-time lock/unlock
+    const interval = setInterval(() => {
+      checkRemoteCloudLicense();
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      />
+      <AppLockModal />
+    </>
   );
 }
